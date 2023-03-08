@@ -1,0 +1,308 @@
+#### Creataing A HR Management Database System 
+-- -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+USE HR_database;
+
+#### After Importing Data From HR Data SQL Script.
+
+-- Data Exploration (Sample Data And Table Description)
+
+-- 1. Departments Table:-- "Contains Department Name and Related ID Of That Department".
+SELECT *
+FROM departments
+LIMIT 15;
+
+-- 2. Deptartment Employees Table:-- "Have Unique Employee ID with their Department Number Including the joining date and relieving date".
+SELECT * 
+FROM dept_emp
+LIMIT 15;
+
+-- 3. Deptartment Manager Table:-- " Same as Deptartment Employees Table, Unique Managerial ID as Employee ID with their Department Number Including the Joining Date and Relieving Date".
+SELECT * 
+FROM dept_manager
+LIMIT 15;
+
+-- 4. Employees Table:-- "Contains Detail Info About The Employees Such as ID, First Name, Last Name, Birth Date, Gender and Joining Date".
+SELECT * 
+FROM employees
+LIMIT 15;
+
+-- 5. Salaries Table:-- "Give Detail Salary (in USD) of Employees by their Employees ID".
+SELECT * 
+FROM salaries
+LIMIT 15;
+
+-- 6. Titles Table:-- "Provides Title Position of Employee By Employees ID".
+SELECT * 
+FROM titles
+LIMIT 15;
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+#### Adding Constraints And Create Relationship Between The Tables.
+
+-- 1. Employees Table:-- "Primery Key on Employee Number Column"
+ALTER TABLE employees
+ADD CONSTRAINT PRIMARY KEY (emp_no);
+
+-- 2. Departments Table:-- "Primery Key on Department Number And Unique Key on Department Name"
+ALTER TABLE departments
+ADD CONSTRAINT PRIMARY KEY (dept_no);
+
+ALTER TABLE departments
+ADD CONSTRAINT UNIQUE KEY (dept_name);
+
+-- 3. Deptartment Manager Table:-- "Primery Key on Employee Number And Department Number Columns, Foreign Key on Employee Number And Department Number Columns On Employees Table"
+ALTER TABLE dept_manager
+ADD CONSTRAINT PRIMARY KEY (emp_no,dept_no);
+
+ALTER TABLE dept_manager
+ADD CONSTRAINT  FOREIGN KEY (emp_no)  REFERENCES employees (emp_no) ON DELETE CASCADE;
+   
+ALTER TABLE dept_manager
+ADD CONSTRAINT FOREIGN KEY (dept_no) REFERENCES departments (dept_no) ON DELETE CASCADE;
+
+-- 4. Deptartment Employees Table:-- "Primery Key on Employee Number And Department Number Columns, Foreign Key on Employee Number And Department Number Columns On Employees Table"
+ALTER TABLE dept_emp
+ADD CONSTRAINT PRIMARY KEY (emp_no,dept_no);
+
+ALTER TABLE dept_emp
+ADD CONSTRAINT FOREIGN KEY (emp_no)  REFERENCES employees (emp_no)  ON DELETE CASCADE;
+   
+ALTER TABLE dept_emp
+ADD CONSTRAINT FOREIGN KEY (dept_no) REFERENCES departments (dept_no) ON DELETE CASCADE;
+
+-- 5. Titles Table:-- "Primery Key on Employee Number, Title, From Date Columns, Foreign Key on Employee Number And From Date Columns On Employees Table"
+ALTER TABLE titles
+ADD CONSTRAINT PRIMARY KEY (emp_no,title, from_date);
+
+ALTER TABLE titles
+ADD CONSTRAINT FOREIGN KEY (emp_no) REFERENCES employees (emp_no) ON DELETE CASCADE;
+
+-- 5. Salaries Table:-- "Primery Key on Employee Number, From Date Columns, Foreign Key on Employee Number On Employees Table"
+ALTER TABLE salaries
+ADD CONSTRAINT PRIMARY KEY (emp_no, from_date);
+
+ALTER TABLE salaries
+ADD CONSTRAINT FOREIGN KEY (emp_no) REFERENCES employees (emp_no) ON DELETE CASCADE;
+-- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## Calculate Age From Birth Year And Add To The Age Column In Employees Table
+## Assuming that the data was collected in year 2021.
+SELECT @@SQL_SAFE_UPDATES;
+
+SET SQL_SAFE_UPDATES = 0;
+
+ALTER TABLE employees
+DROP COLUMN age;
+
+ALTER TABLE employees
+ADD COLUMN age INT NOT NULL;
+
+UPDATE employees
+SET age = ROUND(DATEDIFF('2021/01/01',birth_date)/365);
+
+ALTER TABLE dept_emp
+ADD COLUMN emp_years INT NOT NULL
+AFTER dept_no;
+
+UPDATE dept_emp
+SET emp_years =  (ROUND(DATEDIFF( to_date, from_date)/365));
+
+
+ALTER TABLE dept_manager
+ADD COLUMN emp_years INT NOT NULL
+AFTER dept_no;
+
+UPDATE dept_manager
+SET emp_years =  (ROUND(DATEDIFF( to_date, from_date)/365));
+
+## Make A New Column As Full_Name.
+
+ALTER TABLE employees
+ADD COLUMN full_name VARCHAR(50) 
+AFTER last_name;
+
+UPDATE employees
+SET full_name = CONCAT(first_name, " ", last_name);
+-- -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+## As The Database Is From 1985 - 2000 
+## Updating The Hiring Year From 2003 -2018
+
+UPDATE Employees
+SET Hire_date = CASE
+    WHEN YEAR(Hire_date) BETWEEN 1985 AND 2000 THEN DATE_ADD(Hire_date, INTERVAL (2003 - 1985) YEAR)
+    ELSE Hire_date
+    END;
+    
+ ## Updating Birth Year From 1952-1965 to 1973-1986
+UPDATE Employees
+SET Birth_Date = CASE
+    WHEN YEAR(Birth_Date) BETWEEN 1952 AND 1965 THEN DATE_ADD(Birth_Date, INTERVAL (1970 - 1952) YEAR)
+    ELSE Birth_Date
+    END;
+    
+    ## dept_emp
+UPDATE dept_emp
+SET From_date = CASE
+    WHEN YEAR(From_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(From_date, INTERVAL (2003 - 1985) YEAR)
+    ELSE From_date
+    END;
+    
+UPDATE dept_emp
+SET to_date = CASE
+    WHEN YEAR(to_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(to_date, INTERVAL (2003 - 1985) YEAR)
+    WHEN YEAR(to_date) = 9999 THEN DATE_ADD(to_date, INTERVAL (2021 - 9999) YEAR)
+    ELSE From_date
+    END;
+
+## dept_manager    
+UPDATE dept_manager
+SET From_date = CASE
+    WHEN YEAR(From_date) BETWEEN 1985 AND 1996 THEN DATE_ADD(From_date, INTERVAL (2003 - 1985) YEAR)
+    ELSE From_date
+    END;
+    
+ UPDATE dept_manager
+SET to_date = CASE
+    WHEN YEAR(to_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(to_date, INTERVAL (2003 - 1985) YEAR)
+    WHEN YEAR(to_date) = 9999 THEN DATE_ADD(to_date, INTERVAL (2021 - 9999) YEAR)
+    ELSE From_date
+    END; 
+    
+## salaries
+UPDATE salaries
+SET from_date = CASE
+    WHEN YEAR(from_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(From_date, INTERVAL (2003 - 1985) YEAR)
+    ELSE From_date
+    END;
+    
+UPDATE salaries
+SET to_date = CASE
+    WHEN YEAR(to_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(to_date, INTERVAL (2003 - 1985) YEAR)
+    WHEN YEAR(to_date) = 9999 THEN DATE_ADD(to_date, INTERVAL (2021 - 9999) YEAR)
+    ELSE From_date
+    END; 
+
+## titles
+UPDATE titles
+SET from_date = CASE
+    WHEN YEAR(from_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(From_date, INTERVAL (2003 - 1985) YEAR)
+    ELSE From_date
+    END;
+    
+UPDATE titles
+SET to_date = CASE
+    WHEN YEAR(to_date) BETWEEN 1985 AND 2002 THEN DATE_ADD(to_date, INTERVAL (2003 - 1985) YEAR)
+    WHEN YEAR(to_date) = 9999 THEN DATE_ADD(to_date, INTERVAL (2021 - 9999) YEAR)
+    ELSE From_date
+    END; 
+
+-- ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+-- \\List Of All Male Employees.\\
+SELECT first_name, last_name, hire_date 
+FROM employees 
+WHERE gender = 'M';
+
+-- \\ Average Salary By Gender.\\
+SELECT gender, ROUND(AVG(salary),2) as average_salary
+FROM employees 
+INNER JOIN salaries ON employees.emp_no = salaries.emp_no
+GROUP BY gender;
+
+-- Name All The Departments 
+SELECT DISTINCT(dept_name) FROM departments;
+
+-- Find All The Names Start From 'El' And Ends With 't'
+SELECT first_name, last_name, Count(first_name) as Count
+FROM employees
+WHERE first_name Like 'El%t'
+GROUP BY first_name,last_name
+ORDER BY Count DESC;
+
+-- Fetch All The Names Of The Employyes Along With Their Department Name.
+SELECT e.full_name, d.dept_name, de.from_date, de.to_date
+FROM employees e
+LEFT JOIN dept_emp de ON e.emp_no = de.emp_no
+LEFT JOIN departments d ON de.dept_no = d.dept_no;
+
+-- How Many Female Employees Have Salary More Than 50000?
+SELECT COUNT(e.emp_no) 
+FROM employees e 
+INNER JOIN salaries s ON e.emp_no = s.emp_no 
+WHERE gender = 'F' AND salary > 50000;
+
+-- In Present, How Many Employees are there under each manager (assuming year 2021 is the cuurent year)
+SELECT dm.emp_no AS manager_emp_no, e.full_name AS manager_first_name, COUNT(de.emp_no) AS num_employees
+FROM dept_manager AS dm
+INNER JOIN dept_emp AS de ON dm.dept_no = de.dept_no
+INNER JOIN employees AS e ON dm.emp_no = e.emp_no
+WHERE de.to_date = '2021-01-01'
+GROUP BY dm.emp_no;
+
+-- Name The Departments Has Average Salary Greater Than 65000
+SELECT dept_name, ROUND(AVG(salary),2) 
+FROM employees e 
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no 
+INNER JOIN departments d ON de.dept_no = d.dept_no 
+INNER JOIN salaries s ON e.emp_no = s.emp_no 
+GROUP BY dept_name 
+HAVING AVG(salary) > 65000;
+
+-- Divide employees into 3 Age Groups and count the number of employees.
+SELECT
+  CASE
+    WHEN age < 42 THEN 'Fresher'
+    WHEN age BETWEEN 43 AND 48 THEN 'Associate'
+    ELSE 'Senior'
+  END AS experiance,
+  COUNT(emp_no) AS number_of_employees
+FROM employees
+GROUP BY experiance;
+
+-- Fetch All The Names Of The Employees Who Works In Finance.
+SELECT e.first_name, e.last_name, d.dept_name
+FROM employees e
+INNER JOIN dept_manager dm ON e.emp_no = dm.emp_no
+INNER JOIN departments d ON d.dept_no = dm.dept_no
+WHERE dept_name = 'Finance';
+
+-- Extact Name and Salaries Of All The Managers. 
+SELECT e.first_name, e.last_name, s.salary 
+FROM employees e
+INNER JOIN salaries s ON  e.emp_no = s.emp_no
+WHERE emp_no IN (SELECT emp_no FROM dept_manager);
+
+-- What Is The Average Salary Of Male Employee In Quality Management Department.
+SELECT d.dept_name, ROUND(AVG(s.salary),2) as 'Avg Salary Of Male'
+FROM employees e 
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no 
+INNER JOIN departments d ON de.dept_no = d.dept_no 
+INNER JOIN salaries s ON e.emp_no = s.emp_no 
+WHERE gender = 'M' AND dept_name = 'Quality Management';
+
+-- What will be the ever cost per employee if 5 percent of their salary given as 'Holiday Bonus'
+SELECT d.dept_name, ROUND(AVG(s.salary),2) AS avg_salary, ROUND((AVG(s.salary) * 1.05),2) - ROUND(AVG(s.salary),2) AS holiday_bonus
+FROM employees e
+INNER JOIN salaries s ON e.emp_no = s.emp_no
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no
+INNER JOIN departments d ON de.dept_no = d.dept_no
+GROUP BY de.dept_no;
+
+-- Which departments with the highest and lowest average salary. 
+(SELECT d.dept_name, AVG(s.salary) AS avg_salary
+FROM employees e 
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no 
+INNER JOIN departments d ON de.dept_no = d.dept_no 
+INNER JOIN salaries s ON e.emp_no = s.emp_no 
+GROUP BY d.dept_name
+ORDER BY AVG(s.salary) DESC
+LIMIT 1)
+
+UNION
+
+(SELECT d.dept_name, AVG(s.salary) AS avg_salary
+FROM employees e 
+INNER JOIN dept_emp de ON e.emp_no = de.emp_no 
+INNER JOIN departments d ON de.dept_no = d.dept_no 
+INNER JOIN salaries s ON e.emp_no = s.emp_no 
+GROUP BY d.dept_name
+ORDER BY AVG(s.salary) ASC
+LIMIT 1);
